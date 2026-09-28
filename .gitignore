@@ -1,0 +1,6 @@
+venv/
+__pycache__/
+*.pyc
+
+# Variables de entorno (contiene credenciales, no se sube al repo)
+.env
