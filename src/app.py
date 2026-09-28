@@ -2,7 +2,10 @@ import os
 
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify
-from flask_sqlalchemy import SQLAlchemy
+
+from models import db
+from models.nota import Notas
+from models.usuario import Usuario
 
 # * Carga las variables definidas en el archivo .env
 load_dotenv()
@@ -21,23 +24,42 @@ app.config['SQLALCHEMY_DATABASE_URI'] = (
 )
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-
-db = SQLAlchemy(app)
-
-# * Definimos el modelo de Notas
-class Notas(db.Model):
-    idnota = db.Column(db.Integer, primary_key=True)
-    titulo = db.Column(db.String(100), nullable=False)
-    descripcion = db.Column(db.Text, nullable=False)
-    create_at = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
-
-    def __repr__(self):
-        return f"<Nota {self.titulo}>"
+db.init_app(app)
 
 # * Ruta inicial
 @app.route('/')
 def home():
     return "Hola Flask, que tal? c:"
+
+@app.route('/register', methods=['POST'])
+def register_usuario():
+    data = request.get_json()
+
+    if Usuario.query.filter_by(correo=data.get('correo')).first() is not None:
+        return jsonify({'error': 'El correo ya esta registrado'}), 400
+
+    new_usuario = Usuario(
+        usuario=data.get('usuario'),
+        correo=data.get('correo')
+    )
+    new_usuario.set_password(data.get('password'))
+
+    db.session.add(new_usuario)
+    db.session.commit()
+
+    return jsonify({
+        'message': f'Usuario: {new_usuario.usuario}, registrado correctamente'
+    }), 201
+
+@app.route('/login', methods=['POST'])
+def login_usuario():
+    data = request.get_json()
+    usuario = Usuario.query.filter_by(correo=data.get('correo')).first()
+
+    if usuario is None or not usuario.check_password(data['password']):
+         return jsonify({'error': 'Correo o contraseña incorrectos'}), 401
+
+    return jsonify({'message': f'Usuario: {usuario.usuario}, ha iniciado sesión correctamente'}), 200
 
 # * Obtenemos todas las notas
 @app.route('/notas', methods=['GET'])
