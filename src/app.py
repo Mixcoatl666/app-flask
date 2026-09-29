@@ -2,6 +2,7 @@ import os
 
 from dotenv import load_dotenv
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 
 from models import db
 from models.nota import Notas
@@ -11,6 +12,7 @@ from models.usuario import Usuario
 load_dotenv()
 
 app = Flask(__name__)
+CORS(app)
 
 DB_DIALECT = os.environ.get('DB_DIALECT', 'postgresql+psycopg')
 DB_USER = os.environ.get('DB_USER')
