@@ -1,7 +1,7 @@
 import os
 
 from dotenv import load_dotenv
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, session
 from flask_cors import CORS
 
 from models import db
@@ -12,7 +12,7 @@ from models.usuario import Usuario
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, supports_credentials=True)
 
 DB_DIALECT = os.environ.get('DB_DIALECT', 'postgresql+psycopg')
 DB_USER = os.environ.get('DB_USER')
@@ -20,11 +20,13 @@ DB_PASSWORD = os.environ.get('DB_PASSWORD')
 DB_HOST = os.environ.get('DB_HOST', 'localhost')
 DB_PORT = os.environ.get('DB_PORT', '5432')
 DB_NAME = os.environ.get('DB_NAME')
+SECRET_KEY = os.environ.get('SECRET_KEY')
 
 app.config['SQLALCHEMY_DATABASE_URI'] = (
     f"{DB_DIALECT}://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 )
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.secret_key = SECRET_KEY
 
 db.init_app(app)
 
@@ -58,10 +60,23 @@ def login_usuario():
     data = request.get_json()
     usuario = Usuario.query.filter_by(correo=data.get('correo')).first()
 
-    if usuario is None or not usuario.check_password(data['password']):
-         return jsonify({'error': 'Correo o contraseña incorrectos'}), 401
+    if usuario and usuario.check_password(data.get('password')):
+        session['user_id'] = usuario.idusuario
+        return jsonify({'message': f'Usuario: {usuario.usuario}, ha iniciado sesión correctamente'}), 200
+    else:
+        return jsonify({'error': 'Correo o contraseña incorrectos'}), 401
 
-    return jsonify({'message': f'Usuario: {usuario.usuario}, ha iniciado sesión correctamente'}), 200
+@app.route('/check-auth', methods=['GET'])
+def check_auth():
+    if 'user_id' in session:
+        return jsonify({'authenticated': True}), 200
+    else:
+        return jsonify({'authenticated': False}), 401
+
+@app.route('/logout', methods=['POST'])
+def logout_usuario():
+    session.pop('user_id', None)
+    return jsonify({'message': 'Usuario ha cerrado sesión correctamente'}), 200
 
 # * Obtenemos todas las notas
 @app.route('/notas', methods=['GET'])
@@ -72,6 +87,7 @@ def get_notas():
         'idnota': nota.idnota,
         'titulo': nota.titulo,
         'descripcion': nota.descripcion,
+        'imagen_url': nota.imagen_url,
         'create_at': nota.create_at
     } for nota in notas])
 
@@ -81,7 +97,8 @@ def create_nota():
     data = request.get_json()
     new_nota = Notas (
         titulo=data.get('titulo'),
-        descripcion=data.get('descripcion') 
+        descripcion=data.get('descripcion'),
+        imagen_url=data.get('imagen_url')
     )
     
     db.session.add(new_nota)
@@ -89,7 +106,10 @@ def create_nota():
 
     return jsonify({
         'idnota': new_nota.idnota,
-        'titulo': new_nota.titulo
+        'titulo': new_nota.titulo,
+        'descripcion': new_nota.descripcion,
+        'imagen_url': new_nota.imagen_url,
+        'create_at': new_nota.create_at
     }), 201
 
 # * Actualizamos una nota
@@ -100,12 +120,16 @@ def update_nota(nota_id):
     
     nota.titulo = data['titulo']
     nota.descripcion = data['descripcion']
+    nota.imagen_url = data.get('imagen_url')
 
     db.session.commit()
 
     return jsonify({
         'idnota': nota.idnota,
-        'titulo': nota.titulo
+        'titulo': nota.titulo,
+        'descripcion': nota.descripcion,
+        'imagen_url': nota.imagen_url,
+        'create_at': nota.create_at
     }), 201
 
 # * Vemos una nota en particular
@@ -115,9 +139,13 @@ def view_nota(nota_id):
     
     return jsonify({
         'idnota': nota.idnota,
-        'titulo': nota.titulo
+        'titulo': nota.titulo,
+        'descripcion': nota.descripcion,
+        'imagen_url': nota.imagen_url,
+        'create_at': nota.create_at
     }), 201
 
+# * Eliminamos una nota
 @app.route('/notas/<int:nota_id>', methods=['DELETE'])
 def delete_nota(nota_id):
     nota = Notas.query.get_or_404(nota_id)
@@ -155,4 +183,4 @@ with app.app_context():
     db.create_all()
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=5001)
