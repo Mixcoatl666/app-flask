@@ -8,6 +8,7 @@ class Notas(db.Model):
     imagen_url = db.Column(db.String(255), nullable=True) 
     idusuario = db.Column(db.Integer, db.ForeignKey('usuario.idusuario'), nullable=False)
     create_at = db.Column(db.DateTime, nullable=False, default=db.func.current_timestamp())
+    is_favorite = db.Column(db.Boolean, default=False)
 
     def __repr__(self):
         return f"<Nota {self.titulo}>"

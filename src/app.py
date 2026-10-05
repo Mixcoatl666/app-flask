@@ -162,6 +162,19 @@ def delete_nota(nota_id):
         'message': f'Nota {nota_id} eliminada correctamente'
     }), 200
 
+# * Marcamos o desmarcamos una nota como favorita
+@app.route('/notas/favoritos/<int:nota_id>', methods=['POST'])
+def toggle_favoritos(nota_id):
+    data = request.get_json()
+    is_favorite = data.get('is_favorite')
+
+    nota = Notas.query.get_or_404(nota_id)
+    nota.is_favorite = is_favorite
+    
+    db.session.commit()
+
+    return jsonify({ "message": "Añadido a favoritos" if is_favorite else "Eliminado de favoritos" }), 201
+
 @app.route('/create-article', methods=['GET', 'POST'])
 def create_article():
     if request.method == 'POST':
