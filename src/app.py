@@ -88,7 +88,8 @@ def get_notas():
         'titulo': nota.titulo,
         'descripcion': nota.descripcion,
         'imagen_url': nota.imagen_url,
-        'create_at': nota.create_at
+        'autor': nota.usuario.usuario,
+        'create_at': nota.create_at.strftime('%d-%m-%Y')
     } for nota in notas])
 
 # * Creamos una nueva nota
@@ -98,7 +99,8 @@ def create_nota():
     new_nota = Notas (
         titulo=data.get('titulo'),
         descripcion=data.get('descripcion'),
-        imagen_url=data.get('imagen_url')
+        imagen_url=data.get('imagen_url'),
+        idusuario=session.get('user_id')
     )
     
     db.session.add(new_nota)
@@ -109,7 +111,8 @@ def create_nota():
         'titulo': new_nota.titulo,
         'descripcion': new_nota.descripcion,
         'imagen_url': new_nota.imagen_url,
-        'create_at': new_nota.create_at
+        'autor': new_nota.usuario.usuario,
+        'create_at': new_nota.create_at.strftime('%d-%m-%Y')
     }), 201
 
 # * Actualizamos una nota
@@ -129,7 +132,8 @@ def update_nota(nota_id):
         'titulo': nota.titulo,
         'descripcion': nota.descripcion,
         'imagen_url': nota.imagen_url,
-        'create_at': nota.create_at
+        'autor': nota.usuario.usuario,
+        'create_at': nota.create_at.strftime('%d-%m-%Y')
     }), 201
 
 # * Vemos una nota en particular
@@ -142,7 +146,8 @@ def view_nota(nota_id):
         'titulo': nota.titulo,
         'descripcion': nota.descripcion,
         'imagen_url': nota.imagen_url,
-        'create_at': nota.create_at
+        'autor': nota.usuario.usuario,
+        'create_at': nota.create_at.strftime('%d-%m-%Y')
     }), 201
 
 # * Eliminamos una nota

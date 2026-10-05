@@ -6,6 +6,7 @@ class Usuario(db.Model):
     usuario = db.Column(db.String(50), unique=True, nullable=False)
     correo = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
+    notas = db.relationship('Notas', backref='usuario', lazy=True)
     created_at = db.Column(db.DateTime, default=db.func.current_timestamp())
 
     def set_password(self, password):
