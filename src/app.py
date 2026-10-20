@@ -175,6 +175,31 @@ def toggle_favoritos(nota_id):
 
     return jsonify({ "message": "Añadido a favoritos" if is_favorite else "Eliminado de favoritos" }), 201
 
+# * Filtro para traer favoritos
+@app.route('/notas/favoritos', methods=['GET'])
+def get_favoritos():
+    user_id = session.get('user_id')
+    if user_id is None:
+        return jsonify({'error': 'El usuario no está autenticado'}), 401
+
+    notas_favoritas = Notas.query.filter_by(
+        idusuario=user_id,
+        is_favorite=True
+    ).all()
+    notas_list = [
+        {
+            'idnota': nota.idnota,
+            'titulo': nota.titulo,
+            'descripcion': nota.descripcion,
+            'autor': nota.usuario.usuario,
+            'imagen_url': nota.imagen_url,
+            'is_favorite': nota.is_favorite,
+            'create_at': nota.create_at.strftime('%d-%m-%Y')
+        } for nota in notas_favoritas
+    ]
+
+    return jsonify(notas_list), 200
+
 @app.route('/create-article', methods=['GET', 'POST'])
 def create_article():
     if request.method == 'POST':
