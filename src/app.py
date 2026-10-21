@@ -73,8 +73,6 @@ def check_auth():
     if user_id:
         user = Usuario.query.get(user_id)
         if user:
-            print(user.usuario)
-            print(user.idusuario)
             return jsonify({
                 'authenticated': True,
                 'usuario': user.usuario,
