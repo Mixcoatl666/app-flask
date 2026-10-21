@@ -170,10 +170,10 @@ def delete_nota(nota_id):
     if 'user_id' not in session:
         return jsonify({'message': 'No autorizado'}), 401
 
-    nota = Notas.query.get_or_404(id)
+    nota = Notas.query.get_or_404(nota_id)
 
-    if nota.user_id != session['user_id']:
-        return jsonify({'message': 'No autorizado para eliminar este articulo'})
+    if nota.idusuario != session['user_id']:
+        return jsonify({'message': 'No autorizado para eliminar esta nota'}), 403
 
     try:
         db.session.delete(nota)
