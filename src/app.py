@@ -68,10 +68,24 @@ def login_usuario():
 
 @app.route('/check-auth', methods=['GET'])
 def check_auth():
-    if 'user_id' in session:
-        return jsonify({'authenticated': True}), 200
+    user_id = session.get('user_id')
+
+    if user_id:
+        user = Usuario.query.get(user_id)
+        if user:
+            print(user.usuario)
+            return jsonify({
+                'authenticated': True,
+                'usuario': user.usuario
+            }), 200
+        else:
+            return jsonify({
+                'authenticated': False
+            }), 401
     else:
-        return jsonify({'authenticated': False}), 401
+        return jsonify({
+            'authenticated': False
+        }), 401
 
 @app.route('/logout', methods=['POST'])
 def logout_usuario():
@@ -153,14 +167,21 @@ def view_nota(nota_id):
 # * Eliminamos una nota
 @app.route('/notas/<int:nota_id>', methods=['DELETE'])
 def delete_nota(nota_id):
-    nota = Notas.query.get_or_404(nota_id)
+    if 'user_id' not in session:
+        return jsonify({'message': 'No autorizado'}), 401
 
-    db.session.delete(nota)
-    db.session.commit()
+    nota = Notas.query.get_or_404(id)
 
-    return jsonify({
-        'message': f'Nota {nota_id} eliminada correctamente'
-    }), 200
+    if nota.user_id != session['user_id']:
+        return jsonify({'message': 'No autorizado para eliminar este articulo'})
+
+    try:
+        db.session.delete(nota)
+        db.session.commit()
+        return jsonify({'message': 'Nota eliminada con exito'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': 'Error al eliminar el articulo', 'error': str(e)})
 
 # * Marcamos o desmarcamos una nota como favorita
 @app.route('/notas/favoritos/<int:nota_id>', methods=['POST'])
