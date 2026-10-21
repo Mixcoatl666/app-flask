@@ -74,9 +74,11 @@ def check_auth():
         user = Usuario.query.get(user_id)
         if user:
             print(user.usuario)
+            print(user.idusuario)
             return jsonify({
                 'authenticated': True,
-                'usuario': user.usuario
+                'usuario': user.usuario,
+                'user_id': user.idusuario
             }), 200
         else:
             return jsonify({
@@ -103,7 +105,8 @@ def get_notas():
         'descripcion': nota.descripcion,
         'imagen_url': nota.imagen_url,
         'autor': nota.usuario.usuario,
-        'create_at': nota.create_at.strftime('%d-%m-%Y')
+        'create_at': nota.create_at.strftime('%d-%m-%Y'),
+        'user_id': nota.idusuario
     } for nota in notas])
 
 # * Creamos una nueva nota
