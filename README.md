@@ -1,104 +1,91 @@
 # App Flask
 
-API en Flask con SQLAlchemy para gestionar **notas** y **usuarios** (registro e inicio de sesión), usando PostgreSQL como base de datos.
+![Python](https://img.shields.io/badge/Python-3.10%2B-blue)
+![Flask](https://img.shields.io/badge/Flask-API-black)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-database-4169E1)
+![Estado](https://img.shields.io/badge/estado-archivado-lightgrey)
 
-## Estructura del proyecto
+> **Proyecto archivado:** ya no está en desarrollo activo. Se publica como proyecto de aprendizaje y referencia.
 
-```
-app-flask/
-├── db/
-│   └── tablas.sql        # Script SQL de referencia para crear la tabla de usuarios
-├── src/
-│   ├── app.py             # Punto de entrada de la aplicación (rutas de Flask)
-│   └── models/
-│       ├── __init__.py    # Instancia de SQLAlchemy (db)
-│       ├── nota.py         # Modelo Notas
-│       └── usuario.py      # Modelo Usuario (con hash de contraseña)
-├── .env                    # Variables de entorno (NO se sube a git)
-└── .env.example            # Plantilla de variables de entorno
-```
+API REST de ejemplo para gestionar usuarios y notas con Flask, SQLAlchemy y PostgreSQL. Incluye registro, inicio de sesión basado en sesiones y operaciones sobre notas.
 
-## Requisitos
+## Tecnologías
 
-* Python 3.10+
-* Una base de datos PostgreSQL accesible
+- Python 3.10 o superior
+- Flask y Flask-SQLAlchemy
+- PostgreSQL con `psycopg`
+- Flask-CORS y `python-dotenv`
 
-## Crear el entorno virtual
+## Configuración local
+
+Necesitas Python y una instancia de PostgreSQL accesible.
 
 ```sh
 python3 -m venv venv
-```
-
-## Activarlo en macOS o Linux
-
-Desde la carpeta del proyecto:
-
-```sh
 source venv/bin/activate
-```
-
-Cuando está activo, verás `(venv)` al inicio de la línea de comandos.
-
-## Instalar dependencias
-
-```sh
-python -m pip install Flask Flask-SQLAlchemy psycopg[binary] python-dotenv
-```
-
-## Configurar las variables de entorno
-
-Copia `.env.example` a `.env` y completa los datos de tu conexión a PostgreSQL:
-
-```sh
+python -m pip install Flask Flask-SQLAlchemy 'psycopg[binary]' python-dotenv Flask-Cors
 cp .env.example .env
 ```
 
-Variables disponibles en `.env`:
+Completa en `.env` las credenciales de PostgreSQL y define un `SECRET_KEY` aleatorio. Puedes generarlo con:
 
-| Variable       | Descripción                                   | Valor por defecto        |
-|----------------|------------------------------------------------|---------------------------|
-| `DB_DIALECT`   | Dialecto/driver de SQLAlchemy                  | `postgresql+psycopg`      |
-| `DB_USER`      | Usuario de la base de datos                    | —                          |
-| `DB_PASSWORD`  | Contraseña del usuario                         | —                          |
-| `DB_HOST`      | Host de la base de datos                       | `localhost`                |
-| `DB_PORT`      | Puerto de la base de datos                     | `5432`                      |
-| `DB_NAME`      | Nombre de la base de datos                     | —                          |
+```sh
+python -c "import secrets; print(secrets.token_hex(32))"
+```
 
-El archivo `.env` está incluido en `.gitignore`, por lo que nunca se sube al repositorio.
+Añade el resultado a `.env` como `SECRET_KEY=...`. **No publiques ni subas `.env` a Git**; el archivo está excluido mediante `.gitignore`.
 
-## Crear la base de datos
+| Variable | Descripción | Valor por defecto |
+| --- | --- | --- |
+| `DB_DIALECT` | Dialecto y driver de SQLAlchemy | `postgresql+psycopg` |
+| `DB_USER` | Usuario de PostgreSQL | — |
+| `DB_PASSWORD` | Contraseña de PostgreSQL | — |
+| `DB_HOST` | Host de PostgreSQL | `localhost` |
+| `DB_PORT` | Puerto de PostgreSQL | `5432` |
+| `DB_NAME` | Base de datos | — |
+| `SECRET_KEY` | Clave para firmar las sesiones de Flask | — |
+| `PORT` | Puerto HTTP de desarrollo | `5001` |
 
-Las tablas se crean automáticamente al ejecutar la aplicación (mediante `db.create_all()`). Si prefieres crearlas manualmente, puedes usar el script `db/tablas.sql` como referencia.
+Las tablas se crean al iniciar la aplicación con `db.create_all()`. `db/tablas.sql` es solo una referencia para la tabla de usuarios, no el esquema completo.
 
-## Ejecutar la aplicación
+## Ejecutar
 
-Desde la carpeta `src`:
+Desde la raíz del repositorio, con el entorno virtual activado y `.env` configurado:
 
 ```sh
 cd src
-python3 app.py
+python3 run.py
 ```
 
-Luego abre http://127.0.0.1:5000 en el navegador.
+La API estará disponible por defecto en <http://127.0.0.1:5001>. La variable `PORT` permite cambiar el puerto.
 
-Para salir del entorno virtual:
+## Endpoints
 
-```sh
-deactivate
+| Método | Ruta | Descripción |
+| --- | --- | --- |
+| `GET` | `/` | Comprobación básica de la API |
+| `POST` | `/register` | Registro de usuario |
+| `POST` | `/login` | Inicio de sesión |
+| `GET` | `/check-auth` | Estado de autenticación |
+| `POST` | `/logout` | Cierre de sesión |
+| `GET` | `/notas` | Lista todas las notas |
+| `POST` | `/create-nota` | Crea una nota |
+| `GET` | `/notas/<nota_id>` | Consulta una nota |
+| `PUT` | `/notas/<nota_id>` | Actualiza una nota |
+| `DELETE` | `/notas/<nota_id>` | Elimina una nota |
+| `POST` | `/notas/favoritos/<nota_id>` | Marca o desmarca una nota como favorita |
+| `GET` | `/notas/favoritos` | Lista las notas favoritas del usuario autenticado |
+
+La autenticación usa cookies de sesión. Los clientes frontend deben enviar credenciales al hacer peticiones. Actualmente el indicador de favorito está guardado en la nota, por lo que es global y no independiente por usuario.
+
+## Estructura
+
+```text
+src/
+├── app.py                 # Configuración y factory create_app()
+├── run.py                 # Punto de entrada para desarrollo
+├── models/                # Modelos SQLAlchemy
+└── routes/                # Blueprints de autenticación y notas
+db/
+└── tablas.sql             # Referencia parcial del esquema
 ```
-
-## Endpoints disponibles
-
-| Método | Ruta                     | Descripción                                  |
-|--------|--------------------------|-----------------------------------------------|
-| GET    | `/`                      | Ruta de prueba                                |
-| POST   | `/register`              | Registra un nuevo usuario                     |
-| POST   | `/login`                 | Inicia sesión con correo y contraseña         |
-| GET    | `/notas`                 | Lista todas las notas                         |
-| GET/POST | `/create-nota`         | Crea una nueva nota                           |
-| GET    | `/notas/<id>`            | Consulta una nota específica                  |
-| PUT    | `/notas/<id>`            | Actualiza una nota específica                 |
-| DELETE | `/notas/<id>`            | Elimina una nota específica                   |
-| GET/POST | `/create-article`      | Formulario y creación de un artículo (demo)    |
-| GET    | `/article/<id>`         | Consulta un artículo específico (demo)         |
-
